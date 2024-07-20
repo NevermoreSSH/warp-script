@@ -26,7 +26,7 @@ PACKAGE_INSTALL=("apt -y install" "apt -y install" "yum -y install" "yum -y inst
 PACKAGE_REMOVE=("apt -y remove" "apt -y remove" "yum -y remove" "yum -y remove" "yum -y remove")
 PACKAGE_UNINSTALL=("apt -y autoremove" "apt -y autoremove" "yum -y autoremove" "yum -y autoremove" "yum -y autoremove")
 
-[[ $EUID -ne 0 ]] && red "注意: 请在root用户下运行脚本" && exit 1
+[[ $EUID -ne 0 ]] && red "Note: Please run the script as root user" && exit 1
 
 CMD=("$(grep -i pretty_name /etc/os-release 2>/dev/null | cut -d \" -f2)" "$(hostnamectl 2>/dev/null | grep -i system | cut -d : -f2)" "$(lsb_release -sd 2>/dev/null)" "$(grep -i description /etc/lsb-release 2>/dev/null | cut -d \" -f2)" "$(grep . /etc/redhat-release 2>/dev/null)" "$(grep . /etc/issue 2>/dev/null | cut -d \\ -f1 | sed '/^[ ]*$/d')")
 
@@ -38,7 +38,7 @@ for ((int = 0; int < ${#REGEX[@]}; int++)); do
     [[ $(echo "$SYS" | tr '[:upper:]' '[:lower:]') =~ ${REGEX[int]} ]] && SYSTEM="${RELEASE[int]}" && [[ -n $SYSTEM ]] && break
 done
 
-[[ -z $SYSTEM ]] && red "目前脚本暂未支持 ${SYS} 系统！" && exit 1
+[[ -z $SYSTEM ]] && red "The script currently does not support the ${SYS} system!" && exit 1
 
 wg1="sed -i '/0\.0\.0\.0\/0/d' /etc/wireguard/wgcf.conf"
 wg2="sed -i '/\:\:\/0/d' /etc/wireguard/wgcf.conf"
@@ -48,7 +48,7 @@ wg4="sed -i 's/engage.cloudflareclient.com/[2606:4700:d0::a29f:c001]/g' /etc/wir
 # Wgcf DNS Servers
 wg5="sed -i 's/1.1.1.1/1.1.1.1,1.0.0.1,8.8.8.8,8.8.4.4,2606:4700:4700::1111,2606:4700:4700::1001,2001:4860:4860::8888,2001:4860:4860::8844/g' /etc/wireguard/wgcf.conf"
 wg6="sed -i 's/1.1.1.1/2606:4700:4700::1111,2606:4700:4700::1001,2001:4860:4860::8888,2001:4860:4860::8844,1.1.1.1,1.0.0.1,8.8.8.8,8.8.4.4/g' /etc/wireguard/wgcf.conf"
-# Wgcf 允许外部IP地址
+# Wgcf Allow external IP addresses
 wg7='sed -i "7 s/^/PostUp = ip -4 rule add from $(ip route get 1.1.1.1 | grep -oP '"'src \K\S+') lookup main\n/"'" /etc/wireguard/wgcf.conf && sed -i "7 s/^/PostDown = ip -4 rule delete from $(ip route get 1.1.1.1 | grep -oP '"'src \K\S+') lookup main\n/"'" /etc/wireguard/wgcf.conf'
 wg8='sed -i "7 s/^/PostUp = ip -6 rule add from $(ip route get 2606:4700:4700::1111 | grep -oP '"'src \K\S+') lookup main\n/"'" /etc/wireguard/wgcf.conf && sed -i "7 s/^/PostDown = ip -6 rule delete from $(ip route get 2606:4700:4700::1111 | grep -oP '"'src \K\S+') lookup main\n/"'" /etc/wireguard/wgcf.conf'
 wg9='sed -i "7 s/^/PostUp = ip -4 rule add from $(ip route get 1.1.1.1 | grep -oP '"'src \K\S+') lookup main\n/"'" /etc/wireguard/wgcf.conf && sed -i "7 s/^/PostDown = ip -4 rule delete from $(ip route get 1.1.1.1 | grep -oP '"'src \K\S+') lookup main\n/"'" /etc/wireguard/wgcf.conf && sed -i "7 s/^/PostUp = ip -6 rule add from $(ip route get 2606:4700:4700::1111 | grep -oP '"'src \K\S+') lookup main\n/"'" /etc/wireguard/wgcf.conf && sed -i "7 s/^/PostDown = ip -6 rule delete from $(ip route get 2606:4700:4700::1111 | grep -oP '"'src \K\S+') lookup main\n/"'" /etc/wireguard/wgcf.conf'
@@ -92,7 +92,7 @@ checkwarp(){
 }
 
 checkmtu(){
-    yellow "正在检测并设置MTU最佳值, 请稍等..."
+    yellow "Detecting and setting the optimal MTU value, please wait..."
     checkv4v6
     MTUy=1500
     MTUc=10
@@ -122,14 +122,14 @@ checkmtu(){
     done
     MTU=$((${MTUy} - 80))
     sed -i "s/MTU.*/MTU = $MTU/g" wgcf-profile.conf
-    green "MTU 最佳值=$MTU 已设置完毕"
+    green "MTU optimal value = $MTU has been set"
 }
 
 checktun(){
-    if [[ ! $TUN =~ "in bad state"|"处于错误状态"|"ist in schlechter Verfassung" ]]; then
+    if [[ ! $TUN =~ "in bad state"|"In error state"|"ist in schlechter Verfassung" ]]; then
         if [[ $VIRT == lxc ]]; then
             if [[ $main -lt 5 ]] || [[ $minor -lt 6 ]]; then
-                red "检测到目前VPS未开启TUN模块, 请到后台控制面板处开启"
+                red "It is detected that the TUN module is not enabled on the current VPS. Please go to the backend control panel to enable it."
                 exit 1
             else
                 return 0
@@ -137,7 +137,7 @@ checktun(){
         elif [[ $VIRT == "openvz" ]]; then
             wget -N --no-check-certificate https://cdn.jsdelivr.net/gh/mikupeto/warp-script/files/tun.sh && bash tun.sh
         else
-            red "检测到目前VPS未开启TUN模块, 请到后台控制面板处开启"
+            red "It is detected that the TUN module is not enabled on the current VPS. Please go to the backend control panel to enable it."
             exit 1
         fi
     fi
@@ -159,7 +159,7 @@ wgcfreg(){
     fi
 
     until [[ -a wgcf-account.toml ]]; do
-        yellow "正在向CloudFlare WARP注册账号, 如提示429 Too Many Requests错误请耐心等待脚本重试注册即可"
+        yellow "Registering an account with CloudFlare WARP. If you get a 429 Too Many Requests error, please wait patiently for the script to retry the registration."
         wgcf register --accept-tos
         sleep 5
     done
@@ -181,41 +181,41 @@ wgcfv4(){
 
     if [[ -n $lan4 && -n $out4 && -z $lan6 && -z $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为纯IPv4的VPS，正在切换为Wgcf-WARP全局单栈模式 (WARP IPv4)"
+            yellow "Detected as pure IPv4 VPS, switching to Wgcf-WARP global single stack mode (WARP IPv4)"
             wgcf1=$wg5 && wgcf2=$wg7 && wgcf3=$wg2 && wgcf4=$wg3
             switchconf
         else
-            yellow "检测为纯IPv4的VPS，正在安装Wgcf-WARP全局单栈模式 (WARP IPv4)"
+            yellow "Detected as pure IPv4 VPS, installing Wgcf-WARP global single stack mode (WARP IPv4)"
             wgcf1=$wg5 && wgcf2=$wg7 && wgcf3=$wg2 && wgcf4=$wg3
             installwgcf
         fi
     elif [[ -z $lan4 && -z $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为纯IPv6的VPS，正在切换为Wgcf-WARP全局单栈模式 (WARP IPv4 + 原生 IPv6)"
+            yellow "Detected as pure IPv6 VPS, switching to Wgcf-WARP global single stack mode (WARP IPv4 + native IPv6)"
             wgcf1=$wg6 && wgcf2=$wg2 && wgcf3=$wg4
             switchconf
         else
-            yellow "检测为纯IPv6的VPS，正在安装Wgcf-WARP全局单栈模式 (WARP IPv4 + 原生 IPv6)"
+            yellow "Detected as pure IPv6 VPS, installing Wgcf-WARP global single stack mode (WARP IPv4 + native IPv6)"
             wgcf1=$wg6 && wgcf2=$wg2 && wgcf3=$wg4
             installwgcf
         fi
     elif [[ -n $lan4 && -n $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为原生双栈的VPS，正在切换为Wgcf-WARP全局单栈模式 (WARP IPv4 + 原生 IPv6)"
+            yellow "Detected as native dual-stack VPS, switching to Wgcf-WARP global single-stack mode (WARP IPv4 + native IPv6)"
             wgcf1=$wg5 && wgcf2=$wg7 && wgcf3=$wg2
             switchconf
         else
-            yellow "检测为原生双栈的VPS，正在安装Wgcf-WARP全局单栈模式 (WARP IPv4 + 原生 IPv6)"
+            yellow "Detected as native dual-stack VPS, installing Wgcf-WARP global single-stack mode (WARP IPv4 + native IPv6)"
             wgcf1=$wg5 && wgcf2=$wg7 && wgcf3=$wg2
             installwgcf
         fi
     elif [[ -n $lan4 && -z $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为NAT IPv4+原生 IPv6的VPS，正在切换为Wgcf-WARP全局单栈模式 (WARP IPv4 + 原生 IPv6)"
+            yellow "The VPS detected as NAT IPv4 + native IPv6 is switching to Wgcf-WARP global single stack mode (WARP IPv4 + native IPv6)"
             wgcf1=$wg6 && wgcf2=$wg7 && wgcf3=$wg2 && wgcf4=$wg4
             switchconf
         else
-            yellow "检测为NAT IPv4+原生IPv6的VPS，正在安装Wgcf-WARP全局单栈模式 (WARP IPv4 + 原生 IPv6)"
+            yellow "Detected as NAT IPv4 + native IPv6 VPS, installing Wgcf-WARP global single stack mode (WARP IPv4 + native IPv6)"
             wgcf1=$wg6 && wgcf2=$wg7 && wgcf3=$wg2 && wgcf4=$wg4
             installwgcf
         fi
@@ -234,41 +234,41 @@ wgcfv6(){
 
     if [[ -n $lan4 && -n $out4 && -z $lan6 && -z $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为纯IPv4的VPS，正在切换为Wgcf-WARP全局单栈模式 (原生IPv4 + WARP IPv6)"           
+            yellow "Detected as pure IPv4 VPS, switching to Wgcf-WARP global single stack mode (native IPv4 + WARP IPv6)"           
             wgcf1=$wg5 && wgcf2=$wg1 && wgcf3=$wg3
             switchconf
         else
-            yellow "检测为纯IPv4的VPS，正在安装Wgcf-WARP全局单栈模式 (原生IPv4 + WARP IPv6)"
+            yellow "Detected as pure IPv4 VPS, installing Wgcf-WARP global single stack mode (native IPv4 + WARP IPv6)"
             wgcf1=$wg5 && wgcf2=$wg1 && wgcf3=$wg3
             installwgcf
         fi
     elif [[ -z $lan4 && -z $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为纯IPv6的VPS，正在切换为Wgcf-WARP全局单栈模式 (WARP IPv6)"            
+            yellow "Detected as pure IPv6 VPS, switching to Wgcf-WARP global single stack mode (WARP IPv6)"            
             wgcf1=$wg6 && wgcf2=$wg8 && wgcf3=$wg1 && wgcf4=$wg4
             switchconf
         else
-            yellow "检测为纯IPv6的VPS，正在安装Wgcf-WARP全局单栈模式 (WARP IPv6)"
+            yellow "Detected as pure IPv6 VPS, installing Wgcf-WARP global single stack mode (WARP IPv6)"
             wgcf1=$wg6 && wgcf2=$wg8 && wgcf3=$wg1 && wgcf4=$wg4
             installwgcf
         fi
     elif [[ -n $lan4 && -n $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为原生双栈的VPS，正在切换为Wgcf-WARP全局单栈模式 (原生 IPv4 + WARP IPv6)"            
+            yellow "Detected as native dual-stack VPS, switching to Wgcf-WARP global single-stack mode (native IPv4 + WARP IPv6)"            
             wgcf1=$wg5 && wgcf2=$wg8 && wgcf3=$wg1
             switchconf
         else
-            yellow "检测为原生双栈的VPS，正在安装Wgcf-WARP全局单栈模式 (原生 IPv4 + WARP IPv6)"
+            yellow "Detected as native dual-stack VPS, installing Wgcf-WARP global single-stack mode (native IPv4 + WARP IPv6)"
             wgcf1=$wg5 && wgcf2=$wg8 && wgcf3=$wg1
             installwgcf
         fi
     elif [[ -n $lan4 && -z $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为NAT IPv4+原生 IPv6的VPS，正在切换为Wgcf-WARP全局单栈模式 (WARP IPv6)"            
+            yellow "Detected as NAT IPv4+native IPv6 VPS, switching to Wgcf-WARP global single stack mode (WARP IPv6)"            
             wgcf1=$wg6 && wgcf2=$wg9 && wgcf3=$wg1 && wgcf4=$wg4
             switchconf
         else
-            yellow "检测为NAT IPv4+原生 IPv6的VPS，正在安装Wgcf-WARP全局单栈模式 (WARP IPv6)"
+            yellow "Detected as NAT IPv4+native IPv6 VPS, installing Wgcf-WARP global single stack mode (WARP IPv6)"
             wgcf1=$wg6 && wgcf2=$wg9 && wgcf3=$wg1 && wgcf4=$wg4
             installwgcf
         fi
@@ -287,41 +287,41 @@ wgcfv46(){
 
     if [[ -n $lan4 && -n $out4 && -z $lan6 && -z $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为纯IPv4的VPS，正在切换为Wgcf-WARP全局双栈模式 (WARP IPv4 + WARP IPv6)"            
+            yellow "Detected as pure IPv4 VPS, switching to Wgcf-WARP global dual stack mode (WARP IPv4 + WARP IPv6)"            
             wgcf1=$wg5 && wgcf2=$wg7 && wgcf3=$wg3
             switchconf
         else
-            yellow "检测为纯IPv4的VPS，正在安装Wgcf-WARP全局双栈模式 (WARP IPv4 + WARP IPv6)"
+            yellow "Detected as pure IPv4 VPS, installing Wgcf-WARP global dual stack mode (WARP IPv4 + WARP IPv6)"
             wgcf1=$wg5 && wgcf2=$wg7 && wgcf3=$wg3
             installwgcf
         fi
     elif [[ -z $lan4 && -z $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为纯IPv6的VPS，正在切换为Wgcf-WARP全局双栈模式 (WARP IPv4 + WARP IPv6)"            
+            yellow "Detected as pure IPv6 VPS, switching to Wgcf-WARP global dual stack mode (WARP IPv4 + WARP IPv6)"            
             wgcf1=$wg6 && wgcf2=$wg8 && wgcf3=$wg4
             switchconf
         else
-            yellow "检测为纯IPv6的VPS，正在安装Wgcf-WARP全局双栈模式 (WARP IPv4 + WARP IPv6)"
+            yellow "Detected as pure IPv6 VPS, installing Wgcf-WARP global dual stack mode (WARP IPv4 + WARP IPv6)"
             wgcf1=$wg6 && wgcf2=$wg8 && wgcf3=$wg4
             installwgcf
         fi
     elif [[ -n $lan4 && -n $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为原生双栈的VPS，正在切换为Wgcf-WARP全局单栈模式 (WARP IPv4 + WARP IPv6)"            
+            yellow "Detected as native dual-stack VPS, switching to Wgcf-WARP global single-stack mode (WARP IPv4 + WARP IPv6)"            
             wgcf1=$wg5 && wgcf2=$wg9
             switchconf
         else
-            yellow "检测为原生双栈的VPS，正在安装Wgcf-WARP全局双栈模式 (WARP IPv4 + WARP IPv6)"
+            yellow "Detected as native dual-stack VPS, installing Wgcf-WARP global dual-stack mode (WARP IPv4 + WARP IPv6)"
             wgcf1=$wg5 && wgcf2=$wg9
             installwgcf
         fi
     elif [[ -n $lan4 && -z $out4 && -n $lan6 && -n $out6 ]]; then
         if [[ -n $(type -P wg-quick) && -n $(type -P wgcf) ]]; then
-            yellow "检测为NAT IPv4+原生 IPv6的VPS，正在切换为Wgcf-WARP全局双栈模式 (WARP IPv4 + WARP IPv6)"           
+            yellow "The VPS detected as NAT IPv4+native IPv6 is switching to Wgcf-WARP global dual stack mode (WARP IPv4 + WARP IPv6)"           
             wgcf1=$wg6 && wgcf2=$wg9 && wgcf3=$wg4
             switchconf
         else
-            yellow "检测为NAT IPv4+原生 IPv6的VPS，正在安装Wgcf-WARP全局双栈模式 (WARP IPv4 + WARP IPv6)"
+            yellow "Detected as NAT IPv4 + native IPv6 VPS, installing Wgcf-WARP global dual stack mode (WARP IPv4 + WARP IPv6)"
             wgcf1=$wg6 && wgcf2=$wg9 && wgcf3=$wg4
             installwgcf
         fi
@@ -390,7 +390,7 @@ switchconf(){
 }
 
 checkwgcf(){
-    yellow "正在启动 Wgcf-WARP"
+    yellow "Starting Wgcf-WARP"
     i=0
     while [ $i -le 4 ]; do let i++
         wg-quick down wgcf >/dev/null 2>&1
@@ -398,32 +398,32 @@ checkwgcf(){
         checkwarp
         if [[ $warpv4 =~ on|plus ]] || [[ $warpv6 =~ on|plus ]]; then
             systemctl enable wg-quick@wgcf >/dev/null 2>&1
-            green "Wgcf-WARP 已启动成功！"
+            green "Wgcf-WARP has been started successfully!"
             check_status
             show_status
             break
         else
-            red "Wgcf-WARP 启动失败！"
+            red "Wgcf-WARP failed to start!"
         fi
         checkwarp
         if [[ ! $warpv4 =~ on|plus && ! $warpv6 =~ on|plus ]]; then
-            red "安装Wgcf-WARP失败！"
-            green "建议如下："
-            yellow "1. 建议使用官方源升级系统及内核加速！如已使用第三方源及内核加速，请务必更新到最新版，或重置为官方源"
-            yellow "2. 部分VPS系统极度精简，相关依赖需自行安装后再尝试"
-            yellow "3. 查看https://www.cloudflarestatus.com/，如当前VPS区域可能处于【Re-routed】状态时，代表你的VPS无法使用Wgcf-WARP"
-            yellow "4. 脚本可能跟不上时代, 建议截图发布到GitHub Issues询问"
+            red "Installation of Wgcf-WARP failed!"
+            green "suggestions below:"
+            yellow "1. It is recommended to use the official source to upgrade the system and kernel acceleration! If you have used third-party sources and kernel acceleration, please be sure to update to the latest version, or reset to the official source"
+            yellow "2. Some VPS systems are extremely streamlined, and related dependencies need to be installed by yourself before trying"
+            yellow "3. Check https://www.cloudflarestatus.com/. If the current VPS region is in the [Re-routed] state, it means that your VPS cannot use Wgcf-WARP"
+            yellow "4. The script may not keep up with the times, it is recommended to post screenshots to GitHub Issues for inquiry"
             exit 1
         fi
     done
 }
 
 switchwgcf(){
-    green "请选择以下选项："
-    echo -e " ${GREEN}1.${PLAIN} 重启 Wgcf-WARP"
-    echo -e " ${GREEN}2.${PLAIN} 启动 Wgcf-WARP"
-    echo -e " ${GREEN}3.${PLAIN} 停止 Wgcf-WARP"
-    read -rp "请输入选项：" answerwgcf
+    green "Please select the following options:"
+    echo -e " ${GREEN}1.${PLAIN} Restart Wgcf-WARP"
+    echo -e " ${GREEN}2.${PLAIN} Start Wgcf-WARP"
+    echo -e " ${GREEN}3.${PLAIN} Stop Wgcf-WARP"
+    read -rp "Please enter options：" answerwgcf
     if [[ $answerwgcf == 1 ]]; then
         checkwgcf
     elif [[ $answerwgcf == 2 ]]; then
@@ -431,7 +431,7 @@ switchwgcf(){
     elif [[ $answerwgcf == 3 ]]; then
         wg-quick down wgcf >/dev/null 2>&1
         systemctl disable wg-quick@wgcf >/dev/null 2>&1
-        green "Wgcf-WARP 已停止成功！"
+        green "Wgcf-WARP stopped successfully!"
     fi
 }
 
@@ -448,16 +448,16 @@ unstwgcf(){
     if [[ -e /etc/gai.conf ]]; then
         sed -i '/^precedence[ ]*::ffff:0:0\/96[ ]*100/d' /etc/gai.conf
     fi
-    green "Wgcf-WARP 已彻底卸载成功!"
+    green "Wgcf-WARP has been completely uninstalled successfully!"
 }
 
 installcli(){
-    [[ $SYSTEM == "CentOS" ]] && [[ ! ${VERID} =~ 8 ]] && yellow "当前系统版本：${CMD} \nWARP-Cli代理模式仅支持CentOS / Almalinux / Rocky / Oracle Linux 8系统" && exit 1
-    [[ $SYSTEM == "Debian" ]] && [[ ! ${VERID} =~ 9|10|11 ]] && yellow "当前系统版本：${CMD} \nWARP-Cli代理模式仅支持Debian 9-11系统" && exit 1
-    [[ $SYSTEM == "Fedora" ]] && yellow "当前系统版本：${CMD} \nWARP-Cli暂时不支持Fedora系统" && exit 1
-    [[ $SYSTEM == "Ubuntu" ]] && [[ ! ${VERID} =~ 16|18|20|22 ]] && yellow "当前系统版本：${CMD} \nWARP-Cli代理模式仅支持Ubuntu 16.04/18.04/20.04/22.04系统" && exit 1
+    [[ $SYSTEM == "CentOS" ]] && [[ ! ${VERID} =~ 8 ]] && yellow "Current system version: ${CMD} \nWARP-Cli proxy mode only supports CentOS / Almalinux / Rocky / Oracle Linux 8 systems" && exit 1
+    [[ $SYSTEM == "Debian" ]] && [[ ! ${VERID} =~ 9|10|11 ]] && yellow "Current system version: ${CMD} \nWARP-Cli proxy mode only supports Debian 9-11 systems" && exit 1
+    [[ $SYSTEM == "Fedora" ]] && yellow "Current system version: ${CMD} \nWARP-Cli does not currently support Fedora systems" && exit 1
+    [[ $SYSTEM == "Ubuntu" ]] && [[ ! ${VERID} =~ 16|18|20|22 ]] && yellow "Current system version: ${CMD} \nWARP-Cli proxy mode only supports Ubuntu 16.04/18.04/20.04/22.04 systems" && exit 1
     
-    [[ ! $(archAffix) == "amd64" ]] && red "WARP-Cli暂时不支持目前VPS的CPU架构, 请使用CPU架构为amd64的VPS" && exit 1
+    [[ ! $(archAffix) == "amd64" ]] && red "WARP-Cli does not support the CPU architecture of the current VPS. Please use a VPS with an amd64 CPU architecture." && exit 1
     
     checktun
 
@@ -471,7 +471,7 @@ installcli(){
     fi
 
     if [[ -z $ipv4 ]]; then
-        red "WARP-Cli暂时不支持纯IPv6的VPS，退出安装！"
+        red "WARP-Cli does not currently support pure IPv6 VPS, exit installation!"
         exit 1
     fi
     
@@ -504,7 +504,7 @@ installcli(){
     
     warp-cli --accept-tos register >/dev/null 2>&1
     if [[ $warpcli == 1 ]]; then
-        yellow "正在启动 WARP-Cli IPv4网卡出口模式"
+        yellow "Starting WARP-Cli IPv4 NIC egress mode"
         warp-cli --accept-tos add-excluded-route 0.0.0.0/0 >/dev/null 2>&1
         warp-cli --accept-tos add-excluded-route ::0/0 >/dev/null 2>&1
         warp-cli --accept-tos set-mode warp >/dev/null 2>&1
@@ -518,7 +518,7 @@ installcli(){
         retry_time=0
         until [[ -n $IPv4 ]]; do
             retry_time=$((${retry_time} + 1))
-            red "启动 WARP-Cli IPv4网卡出口模式失败，正在尝试重启，重试次数：$retry_time"
+            red "Failed to start WARP-Cli IPv4 network card export mode, trying to restart, retry times: $retry_time"
             warp-cli --accept-tos disconnect >/dev/null 2>&1
             warp-cli --accept-tos disable-always-on >/dev/null 2>&1
             ip -4 rule delete from 172.16.0.2 lookup 51820
@@ -536,45 +536,45 @@ installcli(){
                 ip -4 rule delete from 172.16.0.2 lookup 51820
                 ip -4 rule delete table main suppress_prefixlength 0
                 uninstallcli
-                red "由于WARP-Cli IPv4网卡出口模式启动重试次数过多 ,已自动卸载WARP-Cli IPv4网卡出口模式"
-                green "建议如下："
-                yellow "1. 建议使用系统官方源升级系统及内核加速！如已使用第三方源及内核加速 ,请务必更新到最新版 ,或重置为系统官方源！"
-                yellow "2. 部分VPS系统过于精简 ,相关依赖需自行安装后再重试"
-                yellow "3. 脚本可能跟不上时代, 建议截图发布到GitHub Issues询问"
+                red "WARP-Cli IPv4 NIC egress mode has been automatically uninstalled due to too many retries to start WARP-Cli IPv4 NIC egress mode"
+                green "suggestions below:"
+                yellow "1. It is recommended to use the official system source to upgrade the system and kernel acceleration! If you have used third-party sources and kernel acceleration, please be sure to update to the latest version, or reset to the official system source!"
+                yellow "2. Some VPS systems are too streamlined, and related dependencies need to be installed by yourself before trying again"
+                yellow "3. The script may not keep up with the times, it is recommended to post screenshots to GitHub Issues for inquiry"
                 exit 1
             fi
         done
-        green "WARP-Cli IPv4网卡出口模式已安装成功！"
+        green "WARP-Cli IPv4 NIC egress mode has been installed successfully!"
         check_status
         show_status
     fi
 
     if [[ $warpcli == 2 ]]; then
-        read -rp "请输入WARP-Cli使用的代理端口 (默认随机端口): " WARPCliPort
+        read -rp "Please enter the proxy port used by WARP-Cli (default is a random port):" WARPCliPort
         [[ -z $WARPCliPort ]] && WARPCliPort=$(shuf -i 1000-65535 -n 1)
         if [[ -n $(ss -ntlp | awk '{print $4}' | grep -w "$WARPCliPort") ]]; then
             until [[ -z $(ss -ntlp | awk '{print $4}' | grep -w "$WARPCliPort") ]]; do
                 if [[ -n $(ss -ntlp | awk '{print $4}' | grep -w "$WARPCliPort") ]]; then
-                    yellow "你设置的端口目前已被占用，请重新输入端口"
-                    read -rp "请输入WARP-Cli使用的代理端口 (默认随机端口): " WARPCliPort
+                    yellow "The port you set is currently occupied. Please re-enter the port."
+                    read -rp "Please enter the proxy port used by WARP-Cli (default is a random port):" WARPCliPort
                 fi
             done
         fi
-        yellow "正在启动 WARP-Cli 代理模式"
+        yellow "Starting WARP-Cli proxy mode"
         warp-cli --accept-tos set-mode proxy >/dev/null 2>&1
         warp-cli --accept-tos set-proxy-port "$WARPCliPort" >/dev/null 2>&1
         warp-cli --accept-tos connect >/dev/null 2>&1
         warp-cli --accept-tos enable-always-on >/dev/null 2>&1
         sleep 2
         if [[ ! $(ss -nltp) =~ 'warp-svc' ]]; then
-            red "由于WARP-Cli代理模式安装失败 ,已自动卸载WARP-Cli代理模式"
-            green "建议如下："
-            yellow "1. 建议使用系统官方源升级系统及内核加速！如已使用第三方源及内核加速 ,请务必更新到最新版 ,或重置为系统官方源！"
-            yellow "2. 部分VPS系统过于精简 ,相关依赖需自行安装后再重试"
-            yellow "3. 脚本可能跟不上时代, 建议截图发布到GitHub Issues询问"
+            red "WARP-Cli proxy mode has been automatically uninstalled due to a WARP-Cli proxy mode installation failure"
+            green "suggestions below:"
+            yellow "1. It is recommended to use the official system source to upgrade the system and kernel acceleration! If you have used third-party sources and kernel acceleration, please be sure to update to the latest version, or reset to the official system source!"
+            yellow "2. Some VPS systems are too streamlined, and related dependencies need to be installed by yourself before trying again"
+            yellow "3. The script may not keep up with the times, it is recommended to post screenshots to GitHub Issues for inquiry"
             exit 1
         else
-            green "WARP-Cli 代理模式已启动成功!"
+            green "WARP-Cli proxy mode has been started successfully!"
             check_status
             show_status
         fi
@@ -586,36 +586,36 @@ warpcli_changeport() {
         warp-cli --accept-tos disconnect >/dev/null 2>&1
     fi
     
-    read -rp "请输入WARP-Cli使用的代理端口 (默认随机端口): " WARPCliPort
+    read -rp "Please enter the proxy port used by WARP-Cli (default is a random port): " WARPCliPort
     [[ -z $WARPCliPort ]] && WARPCliPort=$(shuf -i 1000-65535 -n 1)
     if [[ -n $(ss -ntlp | awk '{print $4}' | grep -w "$WARPCliPort") ]]; then
         until [[ -z $(ss -ntlp | awk '{print $4}' | grep -w "$WARPCliPort") ]]; do
             if [[ -n $(ss -ntlp | awk '{print $4}' | grep -w "$WARPCliPort") ]]; then
-                yellow "你设置的端口目前已被占用，请重新输入端口"
-                read -rp "请输入WARP-Cli使用的代理端口 (默认随机端口): " WARPCliPort
+                yellow "The port you set is currently occupied. Please re-enter the port."
+                read -rp "Please enter the proxy port used by WARP-Cli (default random port): " WARPCliPort
             fi
         done
     fi
     warp-cli --accept-tos set-proxy-port "$WARPCliPort" >/dev/null 2>&1
     
-    yellow "正在启动Warp-Cli代理模式"
+    yellow "Starting Warp-Cli proxy mode"
     warp-cli --accept-tos connect >/dev/null 2>&1
     warp-cli --accept-tos enable-always-on >/dev/null 2>&1
     
     if [[ ! $(ss -nltp) =~ 'warp-svc' ]]; then
-        red "WARP-Cli代理模式启动失败！"
+        red "WARP-Cli proxy mode startup failed!"
         exit 1
     else
-        green "WARP-Cli代理模式已启动成功并成功修改代理端口！"
+        green "WARP-Cli proxy mode has been started successfully and the proxy port has been modified successfully!"
     fi
 }
 
 switchcli(){
-    green "请选择以下选项："
-    echo -e " ${GREEN}1.${PLAIN} 重启 Wgcf-WARP"
-    echo -e " ${GREEN}2.${PLAIN} 启动 Wgcf-WARP"
-    echo -e " ${GREEN}3.${PLAIN} 停止 Wgcf-WARP"
-    read -rp "请输入选项：" answerwgcf
+    green "Please select the following options:"
+    echo -e " ${GREEN}1.${PLAIN} Restart Wgcf-WARP"
+    echo -e " ${GREEN}2.${PLAIN} Start Wgcf-WARP"
+    echo -e " ${GREEN}3.${PLAIN} Stop Wgcf-WARP"
+    read -rp "Please enter options：" answerwgcf
     if [[ $answerwgcf == 1 ]]; then
         yellow "正在重启Warp-Cli"
         warp-cli --accept-tos disconnect >/dev/null 2>&1
